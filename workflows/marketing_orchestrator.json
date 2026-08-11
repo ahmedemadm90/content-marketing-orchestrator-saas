@@ -1,0 +1,46 @@
+{
+  "name": "Marketing SaaS - AI Generation & Posting",
+  "nodes": [
+    {
+      "parameters": {"httpMethod": "POST", "path": "marketing/generate", "responseMode": "responseNode", "options": {}},
+      "id": "1",
+      "name": "Content Request",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 300],
+      "webhookId": "marketing-generate"
+    },
+    {
+      "parameters": {"model": "gpt-4o", "prompt": "={{ 'Generate a social media post for ' + $json.topic + ' with tone ' + $json.tone }}"},
+      "id": "2",
+      "name": "AI Content Creator",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 1,
+      "position": [500, 300]
+    },
+    {
+      "parameters": {"method": "POST", "url": "={{ $env.FACEBOOK_API_URL }}", "sendBody": true, "jsonBody": "={{ { message: $json.text } }}"},
+      "id": "3",
+      "name": "Post to Facebook",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [760, 300]
+    },
+    {
+      "parameters": {"respondWith": "json", "responseBody": "={{ { success: true, post_id: $json.id } }}"},
+      "id": "4",
+      "name": "Confirm to Laravel",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [1020, 300]
+    }
+  ],
+  "connections": {
+    "Content Request": {"main": [[{"node": "AI Content Creator", "type": "main", "index": 0}]]},
+    "AI Content Creator": {"main": [[{"node": "Post to Facebook", "type": "main", "index": 0}]]},
+    "Post to Facebook": {"main": [[{"node": "Confirm to Laravel", "type": "main", "index": 0}]]}
+  },
+  "active": false,
+  "settings": {"executionOrder": "v1"},
+  "versionId": "marketing-orchestrator-v1"
+}
